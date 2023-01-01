@@ -6,6 +6,7 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "start": "react-native start",
+     "android-beta": "cd android && bundle exec fastlane appcenter_release",
     "test": "jest",
     "lint": "eslint ."
   },
