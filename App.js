@@ -30,10 +30,11 @@ import {
 import {useAuth0, Auth0Provider} from 'react-native-auth0';
 
 const Home = () => {
-  const {authorize, clearSession, user, getCredentials, error} = useAuth0();
+  const {authorize, clearSession, user, getCredentials, requireLocalAuthentication, error} = useAuth0();
 
   const onLogin = async () => {
     await authorize({scope: 'openid profile email'});
+    await requireLocalAuthentication();
     const {accessToken} = await getCredentials();
     Alert.alert('AccessToken: ' + accessToken);
   };
