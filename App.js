@@ -6,100 +6,136 @@
  * @flow strict-local
  */
 
-import React from 'react';
-import type {Node} from 'react';
+import React, { useState } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-  Button,
-  Alert
+    Alert,
+    Button,
+    StyleSheet,
+    Text,
+    View,
+    ActivityIndicator
 } from 'react-native';
+import Auth0 from 'react-native-auth0';
+import DeviceInfo from 'react-native-device-info';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-import {useAuth0, Auth0Provider} from 'react-native-auth0';
+var credentials = require('./auth0-configuration');
+const auth0 = new Auth0(credentials);
+const credentialsManager = auth0.credentialsManager;
+const App = () => {
 
-const Home = () => {
-  const {authorize, clearSession, user, getCredentials, requireLocalAuthentication, error} = useAuth0();
+    let [accessToken, setAccessToken] = useState(null);
+    const [isRealDevice, setRealDevice] = useState(false)
+    const [deviceHasCredentials, setDeviceHasCredentials] = useState(false)
+    const [isLoading, setLoading] = useState(true)
 
-  const onLogin = async () => {
-    await authorize({scope: 'openid profile email'});
-    await requireLocalAuthentication();
-    const {accessToken} = await getCredentials();
-    Alert.alert('AccessToken: ' + accessToken);
-  };
+    DeviceInfo.isEmulator().then((isEmulator) => {
+        setRealDevice(!isEmulator);
+        console.log('Running on real device:' + isRealDevice)
+    })
 
-  const loggedIn = user !== undefined && user !== null;
+    credentialsManager.hasValidCredentials().then(result => {
+        setDeviceHasCredentials(result);
+        console.log('Device has credentials:' + deviceHasCredentials)
+        setLoading(false);
+    })
 
-  const onLogout = async () => {
-    await clearSession({federated: true}, {localStorageOnly: false});
-  };
+    const onLogin = () => {
+        if (deviceHasCredentials) {
+            console.log('Valid credentials exist, attempting to get credentials')
+            if (isRealDevice) {
+                credentialsManager.requireLocalAuthentication()
+                    .then(res => {
+                        credentialsManager.getCredentials()
+                           .then(credentials => {
+                                Alert.alert('AccessToken: ' + credentials.accessToken);
+                                setAccessToken(credentials.accessToken);
+                           })
+                           .catch(error => console.log(error));
+                })
+                .catch(error => console.log('Local Auth fail.', error))
+            } else {
+                Alert.alert('Simulating Local Authentication on Emulator');
+                credentialsManager.getCredentials()
+                   .then(credentials => {
+                        Alert.alert('AccessToken: ' + credentials.accessToken);
+                        setAccessToken(credentials.accessToken);
+                   })
+                   .catch(error => console.log(error));
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.header}> Auth0Sample - Login </Text>
-      {user && <Text>You are logged in as {user.name}</Text>}
-      {!user && <Text>You are not logged in</Text>}
-      <Button
-        onPress={loggedIn ? onLogout : onLogin}
-        title={loggedIn ? 'Log Out' : 'Log In'}
-      />
-      {error && <Text style={styles.error}>{error.message}</Text>}
-    </View>
-  );
-};
+            }
+        } else {
+            console.log('No credentials have been saved in this device. Need to sign in with PKCE')
+            auth0.webAuth
+                .authorize({
+                    scope: 'openid profile email offline_access'
+                }, { ephemeralSession: true })
+                .then(credentials => {
+                    setAccessToken(credentials.accessToken);
 
-const App: () => Node = () => {
-  return (
-    <Auth0Provider domain="dev-2gsqftwl.us.auth0.com" clientId="0K14ZMVQ6GCFWI9U1dAryv3lose8yWkt">
-      <Home />
-    </Auth0Provider>
-  );
-};
+                Alert.alert(
+                      "Set PIN/Biometric",
+                      "Do you want to save credentials on the device to login with PIN/Biometric in the  future?",
+                      [
+                        {
+                          text: "No",
+                          onPress: () => console.log("Credentials will not be stored on device"),
+                          style: "cancel"
+                        },
+                        { text: "Yes", onPress: () => {
+                                console.log("Saving credentials on the device");
+                                credentialsManager.saveCredentials(credentials)
+                                .then(result => {console.log(result); setDeviceHasCredentials(true)})
+                                .catch(error => console.log(error))
+                            }
+                        }
+                      ]
+                    );
+
+                })
+                .catch(error => console.log(error));
+        }
+    };
+
+    const onLogout = () => {
+        Alert.alert('Logged out!');
+        setAccessToken(null);
+    };
+
+    const onClearCredentials = () => {
+        credentialsManager.clearCredentials()
+            .then(() => {
+                    setDeviceHasCredentials(false);
+                    console.log('Cleared Credentials')
+                    }
+                )
+    };
+
+    let loggedIn = accessToken !== null;
+    return (
+        <View style={styles.container}>
+            {isLoading && <ActivityIndicator/>}
+            {!isLoading && <><Text style={styles.header}> Auth0 Demo App </Text>
+            <Text>You are{loggedIn ? ' ' : ' not '}logged in. </Text>
+            <Button onPress={loggedIn ? onLogout : onLogin}
+                title={loggedIn ? 'Log Out' : deviceHasCredentials? 'Subsequent Login' : 'First time Login'} />
+            {deviceHasCredentials && <Button onPress={onClearCredentials} title='Clear Credentials' />}
+            <Text>{isRealDevice ? 'Real Device' : 'Emulator/Simulator'}</Text></>}
+        </View >
+    );
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  header: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  error: {
-    margin: 20,
-    textAlign: 'center',
-    color: '#D8000C'
-  },
-//  sectionContainer: {
-//    marginTop: 32,
-//    paddingHorizontal: 24,
-//  },
-//  sectionTitle: {
-//    fontSize: 24,
-//    fontWeight: '600',
-//  },
-//  sectionDescription: {
-//    marginTop: 8,
-//    fontSize: 18,
-//    fontWeight: '400',
-//  },
-  highlight: {
-    fontWeight: '700',
-  },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F5FCFF'
+    },
+    header: {
+        fontSize: 20,
+        textAlign: 'center',
+        margin: 10
+    }
 });
 
 export default App;
