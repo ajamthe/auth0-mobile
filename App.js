@@ -13,7 +13,8 @@ import {
     StyleSheet,
     Text,
     View,
-    ActivityIndicator
+    ActivityIndicator,
+    Platform
 } from 'react-native';
 import Auth0 from 'react-native-auth0';
 import DeviceInfo from 'react-native-device-info';
@@ -24,13 +25,14 @@ const credentialsManager = auth0.credentialsManager;
 const App = () => {
 
     let [accessToken, setAccessToken] = useState(null);
-    const [isRealDevice, setRealDevice] = useState(false)
-    const [deviceHasCredentials, setDeviceHasCredentials] = useState(false)
-    const [isLoading, setLoading] = useState(true)
+    const [isRealDevice, setRealDevice] = useState(false);
+    const [deviceHasCredentials, setDeviceHasCredentials] = useState(false);
+    const [firstTimeLogin, setFirstTimeLogin] = useState(false);
+    const [isLoading, setLoading] = useState(true);
 
     DeviceInfo.isEmulator().then((isEmulator) => {
         setRealDevice(!isEmulator);
-        console.log('Running on real device:' + isRealDevice)
+        console.log('Running on real device:' + isRealDevice);
     })
 
     credentialsManager.hasValidCredentials().then(result => {
@@ -49,6 +51,7 @@ const App = () => {
                            .then(credentials => {
                                 Alert.alert('AccessToken: ' + credentials.accessToken);
                                 setAccessToken(credentials.accessToken);
+                                setFirstTimeLogin(false);
                            })
                            .catch(error => console.log(error));
                 })
@@ -58,6 +61,8 @@ const App = () => {
                 credentialsManager.getCredentials()
                    .then(credentials => {
                         Alert.alert('AccessToken: ' + credentials.accessToken);
+			console.log(credentials.accessToken);
+                        setFirstTimeLogin(false);
                         setAccessToken(credentials.accessToken);
                    })
                    .catch(error => console.log(error));
@@ -70,33 +75,39 @@ const App = () => {
                     scope: 'openid profile email offline_access'
                 }, { ephemeralSession: true })
                 .then(credentials => {
+                    console.log('First time login done');
+                    setFirstTimeLogin(true);
                     setAccessToken(credentials.accessToken);
-
-                Alert.alert(
-                      "Set PIN/Biometric",
-                      "Do you want to save credentials on the device to login with PIN/Biometric in the  future?",
-                      [
-                        {
-                          text: "No",
-                          onPress: () => console.log("Credentials will not be stored on device"),
-                          style: "cancel"
-                        },
-                        { text: "Yes", onPress: () => {
-                                console.log("Saving credentials on the device");
-                                credentialsManager.saveCredentials(credentials)
-                                .then(result => {console.log(result); setDeviceHasCredentials(true)})
-                                .catch(error => console.log(error))
+                    Alert.alert(
+                          "Set PIN/Biometric",
+                          "Do you want to save credentials on the device to login with PIN/Biometric in the  future?",
+                          [
+                            {
+                              text: "No",
+                              onPress: () => console.log("Credentials will not be stored on device"),
+                              style: "cancel"
+                            },
+                            { text: "Yes", onPress: () => {
+                                    console.log("Saving credentials on the device");
+                                    credentialsManager.saveCredentials(credentials)
+                                    .then(result => {console.log(result); setDeviceHasCredentials(true)})
+                                    .catch(error => console.log(error))
+                                }
                             }
-                        }
-                      ]
-                    );
+                          ]
+                        );
 
-                })
-                .catch(error => console.log(error));
+                    })
+                    .catch(error => console.log(error));
         }
     };
 
     const onLogout = () => {
+        // Clear shared session cookie only if it has been created during login process
+        if (Platform.OS === 'android' && firstTimeLogin) {
+            auth0.webAuth.clearSession()
+                .then(() => {console.log('Session Cleared in Android device.')})
+        }
         Alert.alert('Logged out!');
         setAccessToken(null);
     };
@@ -119,7 +130,7 @@ const App = () => {
             <Button onPress={loggedIn ? onLogout : onLogin}
                 title={loggedIn ? 'Log Out' : deviceHasCredentials? 'Subsequent Login' : 'First time Login'} />
             {deviceHasCredentials && <Button onPress={onClearCredentials} title='Clear Credentials' />}
-            <Text>{isRealDevice ? 'Real Device' : 'Emulator/Simulator'}</Text></>}
+            <Text>{isRealDevice ? 'You are using a Real Device' : 'You are using Emulator/Simulator'}</Text></>}
         </View >
     );
 }
