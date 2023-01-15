@@ -2,7 +2,7 @@ PODS:
   - A0Auth0 (2.16.0):
     - Auth0 (~> 2.3)
     - React-Core
-  - Auth0 (2.3.1):
+  - Auth0 (2.3.2):
     - JWTDecode (~> 3.0)
     - SimpleKeychain (~> 1.0)
   - boost (1.76.0)
@@ -518,7 +518,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   A0Auth0: f583922e3947971088781268a1b371bd65403c19
-  Auth0: 910a23b611b7f1c2978fca3ac7579898f8524b0d
+  Auth0: 64da28fdc5cd499aa516dc4bfd0ace8efae2c1da
   boost: a7c83b31436843459a1961bfd74b96033dc77234
   CocoaAsyncSocket: 065fd1e645c7abab64f7a6a2007a48038fdc6a99
   DoubleConversion: 5189b271737e1565bdce30deb4a08d647e3f5f54
