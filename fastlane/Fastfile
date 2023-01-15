@@ -1,0 +1,30 @@
+default_platform(:ios)
+
+platform :ios do    
+  desc 'Fetch certificates and provisioning profiles'
+  lane :certificates do
+    match(app_identifier: 'au.com.lgtm.Auth0Demo', readonly: true)
+  end
+
+  desc 'Fetch certificates. Build the iOS application.'
+  lane :build do
+    certificates
+  gym(
+    scheme: "Auth0Demo",
+    workspace: './ios/Auth0Demo.xcworkspace',
+    # project: './ios/YourAppName.xcodeproj', # Use this command if you don't have an iOS .xcworkspace file.
+    export_method: 'development'
+  )
+ end
+
+  desc 'Fetch certificates, build and upload to App Center.'
+  lane :beta do
+    build
+    appcenter_upload(
+      api_token: ENV["TEST_APPCENTER_API_TOKEN"],
+      owner_name: "ajamthe",
+      app_name: "Auth0Demo-iOS",
+      ipa: "Auth0Demo.ipa" 
+    )
+  end
+end

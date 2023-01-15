@@ -1,0 +1,8 @@
+app_identifier("au.com.lgtm.Auth0Demo") # The bundle identifier of your app
+apple_id("ajamthe@gmail.com") # Your Apple Developer Portal username
+
+itc_team_id("125981465") # App Store Connect Team ID
+team_id("35Q6H4T3XB") # Developer Portal Team ID
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile
