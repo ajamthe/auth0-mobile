@@ -15,29 +15,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
-### ios certificates
-
-```sh
-[bundle exec] fastlane ios certificates
-```
-
-Fetch certificates and provisioning profiles
-
-### ios build
-
-```sh
-[bundle exec] fastlane ios build
-```
-
-Fetch certificates. Build the iOS application.
-
 ### ios beta
 
 ```sh
 [bundle exec] fastlane ios beta
 ```
 
-Fetch certificates, build and upload to App Center.
+
 
 ----
 
