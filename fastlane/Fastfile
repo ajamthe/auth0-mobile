@@ -4,9 +4,6 @@ platform :ios do
     lane :beta do
       sync_code_signing(type: "appstore")    # see code signing guide for more information
       build_app(scheme: "Auth0Demo", workspace: "./ios/Auth0Demo.xcworkspace")
-      upload_to_testflight(
-         notify_external_testers: false
-      )
-      slack(message: "Successfully distributed a new beta build")
+      upload_to_testflight
     end
 end

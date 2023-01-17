@@ -49,7 +49,7 @@ const App = () => {
                     .then(res => {
                         credentialsManager.getCredentials()
                            .then(credentials => {
-                                Alert.alert('AccessToken: ' + credentials.accessToken);
+                                Alert.alert('Obtained access_token with scope: ' + credentials.scope);
                                 setAccessToken(credentials.accessToken);
                                 setFirstTimeLogin(false);
                            })
@@ -60,7 +60,7 @@ const App = () => {
                 Alert.alert('Simulating Local Authentication on Emulator');
                 credentialsManager.getCredentials()
                    .then(credentials => {
-                        Alert.alert('AccessToken: ' + credentials.accessToken);
+                        Alert.alert('Obtained access_token with scope: ' + credentials.scope);
 			console.log(credentials.accessToken);
                         setFirstTimeLogin(false);
                         setAccessToken(credentials.accessToken);
@@ -121,6 +121,20 @@ const App = () => {
                 )
     };
 
+    const onRequestMFAScope = () => {
+        auth0.webAuth.authorize({audience: 'https://lgtm.com.au/api', scope: 'delete:appointments'},
+                                {ephemeralSession: true})
+            .then((credentials) => {
+                    Alert.alert('Obtained MFA scope:' + credentials.scope);
+                    console.log('Requesting MFA scope', credentials)
+                    }
+                )
+                .catch(error => {
+                    Alert.alert('Failed!!! To obtained MFA scope');
+                    console.log('Error requesting MFA scope:', error);
+                });
+
+    }
     let loggedIn = accessToken !== null;
     return (
         <View style={styles.container}>
@@ -129,6 +143,7 @@ const App = () => {
             <Text>You are{loggedIn ? ' ' : ' not '}logged in. </Text>
             <Button onPress={loggedIn ? onLogout : onLogin}
                 title={loggedIn ? 'Log Out' : deviceHasCredentials? 'Subsequent Login' : 'First time Login'} />
+            {accessToken && <Button onPress={onRequestMFAScope} title='Request MFA Scope' />}
             {deviceHasCredentials && <Button onPress={onClearCredentials} title='Clear Credentials' />}
             <Text>{isRealDevice ? 'You are using a Real Device' : 'You are using Emulator/Simulator'}</Text></>}
         </View >
