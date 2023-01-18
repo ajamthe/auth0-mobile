@@ -1,9 +1,20 @@
 default_platform(:ios)
 
-platform :ios do    
+platform :ios do
+
+    private_lane :build do
+        sync_code_signing(type: "appstore")
+        build_app(scheme: "Auth0Demo", workspace: "./ios/Auth0Demo.xcworkspace")
+    end
+
     lane :beta do
-      sync_code_signing(type: "appstore")    # see code signing guide for more information
-      build_app(scheme: "Auth0Demo", workspace: "./ios/Auth0Demo.xcworkspace")
-      upload_to_testflight
+        build
+        upload_to_testflight
+        appcenter_upload(
+          api_token: ENV["TEST_APPCENTER_API_TOKEN"],
+          owner_name: "ajamthe",
+          app_name: "Auth0Demo-iOS",
+          ipa: "Auth0Demo.ipa"
+        )
     end
 end
