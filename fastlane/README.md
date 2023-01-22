@@ -25,6 +25,27 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ----
 
+
+## Android
+
+### android beta
+
+```sh
+[bundle exec] fastlane android beta
+```
+
+Build, and push a release to AppCenter
+
+### android version_number
+
+```sh
+[bundle exec] fastlane android version_number
+```
+
+Get app version number
+
+----
+
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
 
 More information about _fastlane_ can be found on [fastlane.tools](https://fastlane.tools).

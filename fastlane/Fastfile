@@ -1,13 +1,15 @@
-default_platform(:ios)
 
 platform :ios do
-
     private_lane :build do
         sync_code_signing(type: "appstore")
+        increment_build_number(xcodeproj: "./ios/Auth0Demo.xcodeproj")
         build_app(scheme: "Auth0Demo", workspace: "./ios/Auth0Demo.xcworkspace")
     end
 
     lane :beta do
+        increment_version_number(bump_type: "patch", xcodeproj: "./ios/Auth0Demo.xcodeproj")
+#         increment_version_number(version_number: "1.0.0",
+#                                  xcodeproj: "./ios/Auth0Demo.xcodeproj")
         build
         upload_to_testflight
         appcenter_upload(
@@ -15,6 +17,29 @@ platform :ios do
           owner_name: "ajamthe",
           app_name: "Auth0Demo-iOS",
           ipa: "Auth0Demo.ipa"
+        )
+    end
+end
+
+platform :android do
+    desc "Build, and push a release to AppCenter"
+    lane :beta do
+        gradle( task: "clean assembleRelease",
+                project_dir: "./android")
+        appcenter_upload(
+            api_token: "94834b2e5d4a64c279e421b07f33b32c7b56ca76",
+            owner_name: "ajamthe",
+            app_name: "Auth0Demo-Android",
+            file: "./android/app/build/outputs/apk/release/app-release.apk"
+    )
+    end
+
+    desc "Get app version number"
+    lane :version_number do
+        puts appcenter_fetch_version_number(
+          api_token: ENV["TEST_APPCENTER_API_TOKEN"],
+          owner_name: "ajamthe",
+          app_name: "Auth0Demo-Android",
         )
     end
 end
