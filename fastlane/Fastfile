@@ -24,6 +24,7 @@ end
 platform :android do
     desc "Build, and push a release to AppCenter"
     lane :beta do
+        increment_version_code
         gradle( task: "clean assembleRelease",
                 project_dir: "./android")
         appcenter_upload(
@@ -32,14 +33,5 @@ platform :android do
             app_name: "Auth0Demo-Android",
             file: "./android/app/build/outputs/apk/release/app-release.apk"
     )
-    end
-
-    desc "Get app version number"
-    lane :version_number do
-        puts appcenter_fetch_version_number(
-          api_token: ENV["TEST_APPCENTER_API_TOKEN"],
-          owner_name: "ajamthe",
-          app_name: "Auth0Demo-Android",
-        )
     end
 end
