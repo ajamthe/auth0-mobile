@@ -45,7 +45,7 @@ const App = () => {
         if (deviceHasCredentials) {
             console.log('Valid credentials exist, attempting to get credentials')
             if (isRealDevice) {
-                credentialsManager.requireLocalAuthentication()
+                credentialsManager.requireLocalAuthentication(null, null, 'Cancel', 'Try Again', 2)
                     .then(res => {
                         credentialsManager.getCredentials()
                            .then(credentials => {
