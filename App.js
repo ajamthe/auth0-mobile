@@ -24,7 +24,7 @@ const auth0 = new Auth0(credentials);
 const credentialsManager = auth0.credentialsManager;
 const App = () => {
 
-    let [accessToken, setAccessToken] = useState(null);
+    let [credentials, setCredentials] = useState(null);
     const [isRealDevice, setRealDevice] = useState(false);
     const [deviceHasCredentials, setDeviceHasCredentials] = useState(false);
     const [firstTimeLogin, setFirstTimeLogin] = useState(false);
@@ -41,6 +41,15 @@ const App = () => {
         setLoading(false);
     })
 
+    const onRenewCredentials = () => {
+        credentialsManager.getCredentials()
+            .then(credentials => {
+                Alert.alert('Obtained access_token with scope: ' + credentials.scope);
+                setCredentials(credentials);
+            })
+            .catch(error => console.log(error));
+    }
+
     const onLogin = () => {
         if (deviceHasCredentials) {
             console.log('Valid credentials exist, attempting to get credentials')
@@ -50,7 +59,7 @@ const App = () => {
                         credentialsManager.getCredentials()
                            .then(credentials => {
                                 Alert.alert('Obtained access_token with scope: ' + credentials.scope);
-                                setAccessToken(credentials.accessToken);
+                                setCredentials(credentials);
                                 setFirstTimeLogin(false);
                            })
                            .catch(error => console.log(error));
@@ -61,9 +70,9 @@ const App = () => {
                 credentialsManager.getCredentials()
                    .then(credentials => {
                         Alert.alert('Obtained access_token with scope: ' + credentials.scope);
-			console.log(credentials.accessToken);
+			            console.log(credentials.accessToken);
                         setFirstTimeLogin(false);
-                        setAccessToken(credentials.accessToken);
+                        setCredentials(credentials);
                    })
                    .catch(error => console.log(error));
 
@@ -72,12 +81,13 @@ const App = () => {
             console.log('No credentials have been saved in this device. Need to sign in with PKCE')
             auth0.webAuth
                 .authorize({
+                    audience: 'https://lgtm.com.au/api',
                     scope: 'openid profile email offline_access'
                 }, { ephemeralSession: true })
                 .then(credentials => {
                     console.log('First time login done');
                     setFirstTimeLogin(true);
-                    setAccessToken(credentials.accessToken);
+                    setCredentials(credentials);
                     Alert.alert(
                           "Set PIN/Biometric",
                           "Do you want to save credentials on the device to login with PIN/Biometric in the  future?",
@@ -109,7 +119,7 @@ const App = () => {
                 .then(() => {console.log('Session Cleared in Android device.')})
         }
         Alert.alert('Logged out!');
-        setAccessToken(null);
+        setCredentials(null);
     };
 
     const onClearCredentials = () => {
@@ -135,7 +145,21 @@ const App = () => {
                 });
 
     }
-    let loggedIn = accessToken !== null;
+    let accessToken = credentials && credentials.accessToken;
+    let loggedIn = credentials && credentials.accessToken !== null;
+    // Auth0 returns different values for expiresIn in authorize and getCredentails
+
+    let expiresIn = null;
+    if (credentials?.expiresIn < 1000000) {
+        expiresIn = new Date(new Date().getTime() + credentials?.expiresIn * 1000);
+    } else {
+        expiresIn = new Date(credentials?.expiresIn * 1000);
+    }
+
+    let expiresInStr = expiresIn?.toLocaleDateString() +  ' ' + expiresIn?.toLocaleTimeString()
+    let timeNow = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
+    console.log(expiresIn, new Date());
+
     return (
         <View style={styles.container}>
             {isLoading && <ActivityIndicator/>}
@@ -143,8 +167,11 @@ const App = () => {
             <Text>You are{loggedIn ? ' ' : ' not '}logged in. </Text>
             <Button onPress={loggedIn ? onLogout : onLogin}
                 title={loggedIn ? 'Log Out' : deviceHasCredentials? 'Subsequent Login' : 'First time Login'} />
+            {accessToken && <Button onPress={onRenewCredentials} title='Renew Credentials' />}
             {accessToken && <Button onPress={onRequestMFAScope} title='Request MFA Scope' />}
             {deviceHasCredentials && <Button onPress={onClearCredentials} title='Clear Credentials' />}
+            {accessToken && <Text>Expires at: {expiresInStr}</Text>}
+            {accessToken && <Text>Time Now: {timeNow}</Text>}
             <Text>{isRealDevice ? 'You are using a Real Device' : 'You are using Emulator/Simulator'}</Text></>}
         </View >
     );
